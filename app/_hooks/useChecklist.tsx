@@ -34,13 +34,60 @@ import { copyTextToClipboard } from "../_utils/global-utils";
 import { encodeCategoryPath } from "../_utils/global-utils";
 import { areAllItemsCompleted } from "../_utils/checklist-utils";
 import { ConfirmModal } from "@/app/_components/GlobalComponents/Modals/ConfirmationModals/ConfirmModal";
-import { extractHashtagsFromContent } from "../_utils/tag-utils";
+import {
+  extractHashtagsFromContent,
+  extractItemCategoryFromContent,
+} from "../_utils/tag-utils";
 
 interface UseChecklistProps {
   list: Checklist;
   onUpdate: (updatedChecklist: Checklist) => void;
   onDelete?: (deletedId: string) => void;
 }
+
+export interface ItemCategoryGroup {
+  category: string;
+  totalCount: number;
+  matchedCount: number;
+  items: Item[];
+}
+
+const groupItemsByCategory = (
+  allItems: Item[],
+  filteredItems: Item[],
+  getItemCategory: (item: Item) => string | null,
+): { groups: ItemCategoryGroup[]; uncategorizedItems: Item[] } => {
+  const totalsByCategory = new Map<string, number>();
+  allItems.forEach((item) => {
+    const category = getItemCategory(item);
+    if (category) {
+      totalsByCategory.set(category, (totalsByCategory.get(category) || 0) + 1);
+    }
+  });
+
+  const itemsByCategory = new Map<string, Item[]>();
+  const uncategorizedItems: Item[] = [];
+  filteredItems.forEach((item) => {
+    const category = getItemCategory(item);
+    if (category) {
+      if (!itemsByCategory.has(category)) itemsByCategory.set(category, []);
+      itemsByCategory.get(category)!.push(item);
+    } else {
+      uncategorizedItems.push(item);
+    }
+  });
+
+  const groups: ItemCategoryGroup[] = Array.from(totalsByCategory.keys())
+    .sort()
+    .map((category) => ({
+      category,
+      totalCount: totalsByCategory.get(category) || 0,
+      matchedCount: (itemsByCategory.get(category) || []).length,
+      items: itemsByCategory.get(category) || [],
+    }));
+
+  return { groups, uncategorizedItems };
+};
 
 export const useChecklist = ({
   list,
@@ -824,12 +871,27 @@ export const useChecklist = ({
 
   const clearItemTagFilters = () => setSelectedItemTags([]);
 
-  const incompleteItems = localList.items.filter(
-    (item) => !isItemFullyCompleted(item) && itemMatchesTagFilter(item)
+  const getItemCategory = (item: Item): string | null =>
+    extractItemCategoryFromContent(item.text || "");
+
+  const allIncompleteItems = localList.items.filter(
+    (item) => !isItemFullyCompleted(item)
   );
-  const completedItems = localList.items.filter(
-    (item) => isItemFullyCompleted(item) && itemMatchesTagFilter(item)
+  const allCompletedItems = localList.items.filter((item) =>
+    isItemFullyCompleted(item)
   );
+
+  const incompleteItems = allIncompleteItems.filter(itemMatchesTagFilter);
+  const completedItems = allCompletedItems.filter(itemMatchesTagFilter);
+
+  const {
+    groups: incompleteCategoryGroups,
+    uncategorizedItems: incompleteUncategorizedItems,
+  } = groupItemsByCategory(allIncompleteItems, incompleteItems, getItemCategory);
+  const {
+    groups: completedCategoryGroups,
+    uncategorizedItems: completedUncategorizedItems,
+  } = groupItemsByCategory(allCompletedItems, completedItems, getItemCategory);
 
   return {
     isLoading,
@@ -859,6 +921,10 @@ export const useChecklist = ({
     handleCopyId,
     incompleteItems,
     completedItems,
+    incompleteCategoryGroups,
+    incompleteUncategorizedItems,
+    completedCategoryGroups,
+    completedUncategorizedItems,
     availableItemTags,
     selectedItemTags,
     toggleItemTagFilter,

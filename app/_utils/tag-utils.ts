@@ -140,6 +140,18 @@ export const extractHashtagsFromContent = (content: string): string[] => {
   return Array.from(tags);
 };
 
+export const extractItemCategoryFromContent = (
+  content: string,
+): string | null => {
+  const codeBlockRegex =
+    /```[\s\S]*?```|`[^`]+`|<code[^>]*>[\s\S]*?<\/code>|<pre[^>]*>[\s\S]*?<\/pre>/gi;
+  const contentWithoutCode = content.replace(codeBlockRegex, "");
+
+  const categoryRegex = /(?:^|[\s(])@([a-zA-Z][a-zA-Z0-9_-]*)/;
+  const match = categoryRegex.exec(contentWithoutCode);
+  return match ? normalizeTag(match[1]) : null;
+};
+
 export const tagMatchesFilter = (
   noteTag: string,
   filterTag: string,

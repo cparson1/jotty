@@ -55,12 +55,66 @@ time, not stored as a separate field.
   the checklist. The `TagLinkComponent` used inside the TipTap editor (notes)
   is untouched — only the checklist item view path got the new prop.
 
-## Verified working (manual browser test, 2026-07-04)
+### 5. `@category` item grouping (broad category, separate from `#hashtag`)
+- New tag syntax: `@word` in item text denotes a broad category (distinct
+  from `#hashtag`). An item can have at most one category — the *first*
+  `@word` match in its own text (not descended into children).
+- `extractItemCategoryFromContent(content): string | null` added to
+  `app/_utils/tag-utils.ts`, mirroring `extractHashtagsFromContent`'s
+  code-block-stripping/anchoring approach but for a single `@` match, no `/`
+  nesting allowed (categories are flat, unlike hashtags).
+- `useChecklist.tsx`: `getItemCategory(item)` wraps the extractor;
+  `groupItemsByCategory(allItems, filteredItems, getItemCategory)` computes,
+  per bucket (incomplete/completed), a sorted list of
+  `{ category, totalCount, matchedCount, items }` groups plus a leftover
+  `uncategorizedItems` array. `totalCount` is computed from the bucket
+  *before* the `#hashtag` filter is applied; `matchedCount`/`items` come from
+  *after* it — this is what makes the header read e.g. `@produce (2/6)` when
+  a tag filter narrows 6 category members down to 2 visible ones.
+- New hook exports: `incompleteCategoryGroups`, `incompleteUncategorizedItems`,
+  `completedCategoryGroups`, `completedUncategorizedItems` (type
+  `ItemCategoryGroup[]`, exported from `useChecklist.tsx`).
+- New component `Parts/Simple/CategorySection.tsx`: collapsible section
+  (chevron icon, default expanded, local `useState` — not persisted) showing
+  `@{category} ({matchedCount}/{totalCount})` as its header.
+- `ChecklistBody.tsx`: in the non-virtualized render path only, renders one
+  `CategorySection` per group (in sequence, alphabetical) followed by the
+  plain uncategorized-items list (using the exact same `NestedChecklistItem`/
+  `DropIndicator` markup as before). When no items have a category, groups is
+  `[]` and `uncategorizedItems` equals the full bucket — so it degrades to
+  today's exact flat rendering with zero visual change. No new i18n strings
+  needed (the category label is user-authored text, not a static string).
+- **No pill/filter UI for categories** — deliberate choice per this session's
+  discussion. Categories are pure grouping/display; the existing `#hashtag`
+  pill bar and `selectedItemTags` filter are completely unaffected and still
+  the only filterable dimension. A category section's counts just reflect
+  whatever the hashtag filter currently narrows down to.
+- **Known rough edge, accepted for now:** drag-and-drop reordering is
+  unaffected *within* a category's items or within the uncategorized list
+  (same `DropIndicator`/`useDraggable` machinery as before), but there's no
+  `DropIndicator` *between* category sections, so dragging an item across a
+  category boundary has no precise visual drop target. Items remain
+  individually draggable regardless; this just means cross-category drops are
+  a bit imprecise. Not fixed — full category-aware DnD would be a much bigger
+  change for a personal-use nicety.
+- **Virtualized path (≥50 items in a bucket) does not group by category** —
+  same scope limitation as the original tag-filter work; `VirtualizedChecklistItems`
+  renders its flat list unchanged regardless of `@category` tags present.
+
+## Verified working (manual browser test, 2026-07-04/05)
 - Ran `yarn install` + `yarn dev`, created a simple checklist, added items
   `Milk #dairy`, `Cheese #dairy`, `Bread #bakery`.
 - Confirmed: pill bar shows `#bakery`/`#dairy`; clicking one filters to
   matching items; clicking both is OR (all 3 items show); "Clear" resets.
-- `npx tsc --noEmit` and `yarn lint` both pass clean.
+- Confirmed inline `#tag` click on an item toggles the filter instead of
+  navigating away, in both directions (toggle on/off), reproducibly across a
+  clean dev server restart.
+- Confirmed `@category` grouping: items with e.g. `@category3` grouped under
+  a collapsible `@category3 (N/M)` header; collapse/expand works; header
+  counts update correctly when a `#hashtag` filter narrows the visible set
+  (verified `(1/2)` and `(0/1)` cases); works independently in both the "To
+  Do" and "Completed" sections when an item is checked off.
+- `npx tsc --noEmit` and `yarn lint` both pass clean after each round of changes.
 - Did **not** write an automated test suite — this is a personal fork, not a
   contribution upstream, so it wasn't worth the investment. If that changes,
   the natural place for unit tests is `tests/utils` (see

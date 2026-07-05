@@ -7,8 +7,10 @@ import {
 } from "@dnd-kit/core";
 import { ChecklistProgress } from "./ChecklistProgress";
 import { ChecklistItemsWrapper } from "./ChecklistItemsWrapper";
+import { CategorySection } from "./CategorySection";
 import { NestedChecklistItem } from "@/app/_components/FeatureComponents/Checklists/Parts/Simple/NestedChecklistItem";
 import VirtualizedChecklistItems from "./VirtualizedChecklistItems";
+import { ItemCategoryGroup } from "@/app/_hooks/useChecklist";
 import { Checklist, Item } from "@/app/_types";
 import { DropIndicator } from "./DropIndicator";
 import { ItemTypes, TaskStatusLabels } from "@/app/_types/enums";
@@ -25,6 +27,10 @@ interface ChecklistBodyProps {
   localList: Checklist;
   incompleteItems: Item[];
   completedItems: Item[];
+  incompleteCategoryGroups?: ItemCategoryGroup[];
+  incompleteUncategorizedItems?: Item[];
+  completedCategoryGroups?: ItemCategoryGroup[];
+  completedUncategorizedItems?: Item[];
   handleToggleItem: (itemId: string, completed: boolean) => void;
   handleDeleteItem: (itemId: string) => void;
   handleEditItem: (itemId: string, text: string) => void;
@@ -45,6 +51,10 @@ export const ChecklistBody = ({
   localList,
   incompleteItems,
   completedItems,
+  incompleteCategoryGroups = [],
+  incompleteUncategorizedItems = incompleteItems,
+  completedCategoryGroups = [],
+  completedUncategorizedItems = completedItems,
   handleToggleItem,
   handleDeleteItem,
   handleEditItem,
@@ -226,15 +236,52 @@ export const ChecklistBody = ({
                   />
                 ) : (
                   <>
+                    {incompleteCategoryGroups.map((group) => (
+                      <CategorySection
+                        key={group.category}
+                        category={group.category}
+                        matchedCount={group.matchedCount}
+                        totalCount={group.totalCount}
+                      >
+                        {group.items.map((item, index) => (
+                          <div key={item.id}>
+                            <NestedChecklistItem
+                              item={item}
+                              index={index.toString()}
+                              level={0}
+                              onToggle={handleToggleItem}
+                              onDelete={handleDeleteItem}
+                              onEdit={handleEditItem}
+                              onAddSubItem={handleAddSubItem}
+                              onTagClick={toggleItemTagFilter}
+                              isDeletingItem={isDeletingItem}
+                              isDragDisabled={false}
+                              checklist={localList}
+                              isOver={overItem?.id === item.id}
+                              overPosition={
+                                overItem?.id === item.id
+                                  ? overItem.position
+                                  : undefined
+                              }
+                              isAnyItemDragging={isDragging}
+                              overItem={overItem}
+                              draggedItemId={activeItem?.id}
+                            />
+                          </div>
+                        ))}
+                      </CategorySection>
+                    ))}
                     <DropIndicator
-                      id={`drop-before::${incompleteItems[0]?.id || "start"}`}
+                      id={`drop-before::${
+                        incompleteUncategorizedItems[0]?.id || "start"
+                      }`}
                       data={{
                         type: "drop-indicator",
                         position: "before",
-                        targetId: incompleteItems[0]?.id,
+                        targetId: incompleteUncategorizedItems[0]?.id,
                       }}
                     />
-                    {incompleteItems.map((item, index) => (
+                    {incompleteUncategorizedItems.map((item, index) => (
                       <div key={item.id}>
                         <NestedChecklistItem
                           item={item}
@@ -296,17 +343,55 @@ export const ChecklistBody = ({
                   />
                 ) : (
                   <>
+                    {completedCategoryGroups.map((group) => (
+                      <CategorySection
+                        key={group.category}
+                        category={group.category}
+                        matchedCount={group.matchedCount}
+                        totalCount={group.totalCount}
+                      >
+                        {group.items.map((item, index) => (
+                          <div key={item.id}>
+                            <NestedChecklistItem
+                              item={item}
+                              index={(
+                                incompleteItems.length + index
+                              ).toString()}
+                              level={0}
+                              onToggle={handleToggleItem}
+                              onDelete={handleDeleteItem}
+                              onEdit={handleEditItem}
+                              onAddSubItem={handleAddSubItem}
+                              onTagClick={toggleItemTagFilter}
+                              completed
+                              isDeletingItem={isDeletingItem}
+                              isDragDisabled={false}
+                              checklist={localList}
+                              isOver={overItem?.id === item.id}
+                              overPosition={
+                                overItem?.id === item.id
+                                  ? overItem.position
+                                  : undefined
+                              }
+                              isAnyItemDragging={isDragging}
+                              overItem={overItem}
+                              draggedItemId={activeItem?.id}
+                            />
+                          </div>
+                        ))}
+                      </CategorySection>
+                    ))}
                     <DropIndicator
                       id={`drop-before::${
-                        completedItems[0]?.id || "start-completed"
+                        completedUncategorizedItems[0]?.id || "start-completed"
                       }`}
                       data={{
                         type: "drop-indicator",
                         position: "before",
-                        targetId: completedItems[0]?.id,
+                        targetId: completedUncategorizedItems[0]?.id,
                       }}
                     />
-                    {completedItems.map((item, index) => (
+                    {completedUncategorizedItems.map((item, index) => (
                       <div key={item.id}>
                         <NestedChecklistItem
                           item={item}
