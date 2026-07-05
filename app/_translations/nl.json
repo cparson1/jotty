@@ -497,6 +497,8 @@
     "youHaveItemsThatWillNotBeAdded": "U heeft {count} items die nog niet zijn toegevoegd. Sluiten zonder toe te voegen of nu toevoegen?",
     "noItemsYet": "Nog geen items",
     "addFirstItem": "Voeg uw eerste item toe om te beginnen!",
+    "clearTagFilters": "Wissen",
+    "noItemsMatchTags": "Geen items komen overeen met de geselecteerde tags",
     "noTasks": "Geen taken",
     "noSubtasksYet": "Nog geen subtaken. Voeg er hieronder een toe om te beginnen.",
     "addTime": "Tijd toevoegen",

@@ -522,6 +522,8 @@
     "youHaveItemsThatWillNotBeAdded": "您有 {count} 个项目尚未添加。关闭且不添加，还是现在添加？",
     "noItemsYet": "暂无项目",
     "addFirstItem": "添加您的第一个项目以开始！",
+    "clearTagFilters": "清除",
+    "noItemsMatchTags": "没有项目匹配所选标签",
     "noTasks": "无任务",
     "noSubtasksYet": "暂无子任务。在下方添加一个以开始。",
     "addTime": "添加时间",

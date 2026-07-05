@@ -18,6 +18,8 @@ import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { ReferencedBySection } from "@/app/_components/FeatureComponents/Notes/Parts/ReferencedBySection";
 import { useTranslations } from "next-intl";
 import { useUIStore } from "@/app/_utils/ui-store";
+import { Tag01Icon, Cancel01Icon } from "hugeicons-react";
+import { cn } from "@/app/_utils/global-utils";
 
 interface ChecklistBodyProps {
   localList: Checklist;
@@ -33,6 +35,10 @@ interface ChecklistBodyProps {
   sensors: any;
   isLoading: boolean;
   isDeletingItem: boolean;
+  availableItemTags?: string[];
+  selectedItemTags?: string[];
+  toggleItemTagFilter?: (tag: string) => void;
+  clearItemTagFilters?: () => void;
 }
 
 export const ChecklistBody = ({
@@ -49,6 +55,10 @@ export const ChecklistBody = ({
   sensors,
   isLoading,
   isDeletingItem,
+  availableItemTags = [],
+  selectedItemTags = [],
+  toggleItemTagFilter,
+  clearItemTagFilters,
 }: ChecklistBodyProps) => {
   const t = useTranslations();
   const { linkIndex, notes, checklists, appSettings } = useAppMode();
@@ -143,7 +153,47 @@ export const ChecklistBody = ({
       {localList.items.length > 0 && (
         <ChecklistProgress checklist={localList} />
       )}
+      {availableItemTags.length > 0 && toggleItemTagFilter && (
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+          <Tag01Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+          {availableItemTags.map((tag) => {
+            const isSelected = selectedItemTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                onClick={() => toggleItemTagFilter(tag)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium rounded-jotty border transition-colors",
+                  isSelected
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                #{tag}
+              </button>
+            );
+          })}
+          {selectedItemTags.length > 0 && clearItemTagFilters && (
+            <button
+              onClick={clearItemTagFilters}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Cancel01Icon className="h-3.5 w-3.5" />
+              {t("checklists.clearTagFilters")}
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto jotty-scrollable-content p-4">
+        {selectedItemTags.length > 0 &&
+          incompleteItems.length === 0 &&
+          completedItems.length === 0 && (
+            <div className="bg-card rounded-jotty border border-border p-8 text-center mb-4">
+              <p className="text-muted-foreground">
+                {t("checklists.noItemsMatchTags")}
+              </p>
+            </div>
+          )}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

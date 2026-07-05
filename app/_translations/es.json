@@ -497,6 +497,8 @@
     "youHaveItemsThatWillNotBeAdded": "Tiene {count} elementos que no se han agregado. ¿Cerrar sin agregar o agregarlos ahora?",
     "noItemsYet": "Aún no hay elementos",
     "addFirstItem": "¡Agregue su primer elemento para comenzar!",
+    "clearTagFilters": "Borrar",
+    "noItemsMatchTags": "Ningún elemento coincide con las etiquetas seleccionadas",
     "noTasks": "Sin tareas",
     "noSubtasksYet": "Aún no hay subtareas. Agregue una abajo para comenzar.",
     "addTime": "Agregar hora",

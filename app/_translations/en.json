@@ -524,6 +524,8 @@
     "youHaveItemsThatWillNotBeAdded": "You have {count} items that have not been added. Close without adding or add them now?",
     "noItemsYet": "No items yet",
     "addFirstItem": "Add your first item to get started!",
+    "clearTagFilters": "Clear",
+    "noItemsMatchTags": "No items match the selected tags",
     "noTasks": "No tasks",
     "noSubtasksYet": "No subtasks yet. Add one below to get started.",
     "addTime": "Add Time",

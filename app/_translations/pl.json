@@ -497,6 +497,8 @@
     "youHaveItemsThatWillNotBeAdded": "Masz {count} elementów, które nie zostaną dodane. Zamknij bez dodawania lub dodać je teraz?",
     "noItemsYet": "Brak elementów",
     "addFirstItem": "Dodaj swój pierwszy element, aby rozpocząć!",
+    "clearTagFilters": "Wyczyść",
+    "noItemsMatchTags": "Żaden element nie pasuje do wybranych tagów",
     "noTasks": "Brak zadań",
     "noSubtasksYet": "Brak podzadań. Dodaj jedno poniżej, aby zacząć.",
     "addTime": "Dodaj Czas",

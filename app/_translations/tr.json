@@ -522,6 +522,8 @@
     "youHaveItemsThatWillNotBeAdded": "Eklenmemiş {count} ögeniz var. Eklemeden kapatmak mı yoksa şimdi eklemek mi istersiniz?",
     "noItemsYet": "Henüz öge yok",
     "addFirstItem": "Başlamak için ilk ögenizi ekleyin!",
+    "clearTagFilters": "Temizle",
+    "noItemsMatchTags": "Seçilen etiketlerle eşleşen öge yok",
     "noTasks": "Görev yok",
     "noSubtasksYet": "Henüz alt görev yok. Başlamak için aşağıdan bir tane ekleyin.",
     "addTime": "Süre Ekle",

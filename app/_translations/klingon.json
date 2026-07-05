@@ -522,6 +522,8 @@
     "youHaveItemsThatWillNotBeAdded": "{count} Dochmey chelbe'lu'. bISoQ 'ej bIchelbe' pagh DaH bIchel?",
     "noItemsYet": "Dochmey tu'be'lu'",
     "addFirstItem": "bItaghmeH Doch wa'DIch yIchel!",
+    "clearTagFilters": "Hmv",
+    "noItemsMatchTags": "cha'DIchmey wIvpu'bogh Dochmey tu'be'lu'",
     "noTasks": "Qu'mey tu'be'lu'",
     "noSubtasksYet": "Qu'Hommey tu'be'lu'. bItaghmeH wa' yIchel.",
     "addTime": "poH yIchel",

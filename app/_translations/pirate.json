@@ -522,6 +522,8 @@
     "youHaveItemsThatWillNotBeAdded": "Ye have {count} items left on the dock. Sail without 'em?",
     "noItemsYet": "Empty hold",
     "addFirstItem": "Stow yer first item!",
+    "clearTagFilters": "Swab",
+    "noItemsMatchTags": "No booty matches yer chosen tags",
     "noTasks": "No chores",
     "noSubtasksYet": "No small chores yet.",
     "addTime": "Add Sand",

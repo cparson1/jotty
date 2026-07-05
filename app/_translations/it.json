@@ -497,6 +497,8 @@
     "youHaveItemsThatWillNotBeAdded": "Hai {count} item che non sono stati aggiunti. Vuoi chiudere senza aggiungerli?",
     "noItemsYet": "Ancora nessun item",
     "addFirstItem": "Aggiungi il tuo primo item per iniziare!",
+    "clearTagFilters": "Cancella",
+    "noItemsMatchTags": "Nessun item corrisponde ai tag selezionati",
     "noTasks": "Nessun task",
     "noSubtasksYet": "Nessuna attività secondaria. Aggiungine una qui sotto per iniziare.",
     "addTime": "Aggiungi tempo",

@@ -34,6 +34,7 @@ import { copyTextToClipboard } from "../_utils/global-utils";
 import { encodeCategoryPath } from "../_utils/global-utils";
 import { areAllItemsCompleted } from "../_utils/checklist-utils";
 import { ConfirmModal } from "@/app/_components/GlobalComponents/Modals/ConfirmationModals/ConfirmModal";
+import { extractHashtagsFromContent } from "../_utils/tag-utils";
 
 interface UseChecklistProps {
   list: Checklist;
@@ -57,6 +58,7 @@ export const useChecklist = ({
   const [focusKey, setFocusKey] = useState(0);
   const [copied, setCopied] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<string[]>([]);
+  const [selectedItemTags, setSelectedItemTags] = useState<string[]>([]);
   const [pendingToggles, setPendingToggles] = useState<Map<string, boolean>>(
     new Map()
   );
@@ -789,11 +791,44 @@ export const useChecklist = ({
     return false;
   };
 
+  const getItemOwnTags = (item: Item): string[] =>
+    extractHashtagsFromContent(item.text || "");
+
+  const collectItemTagsDeep = (item: Item): string[] => {
+    const tags = getItemOwnTags(item);
+    if (item.children && item.children.length > 0) {
+      return tags.concat(item.children.flatMap(collectItemTagsDeep));
+    }
+    return tags;
+  };
+
+  const availableItemTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    localList.items.forEach((item) => {
+      collectItemTagsDeep(item).forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [localList.items]);
+
+  const itemMatchesTagFilter = (item: Item): boolean => {
+    if (selectedItemTags.length === 0) return true;
+    const itemTags = collectItemTagsDeep(item);
+    return selectedItemTags.some((tag) => itemTags.includes(tag));
+  };
+
+  const toggleItemTagFilter = (tag: string) => {
+    setSelectedItemTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const clearItemTagFilters = () => setSelectedItemTags([]);
+
   const incompleteItems = localList.items.filter(
-    (item) => !isItemFullyCompleted(item)
+    (item) => !isItemFullyCompleted(item) && itemMatchesTagFilter(item)
   );
-  const completedItems = localList.items.filter((item) =>
-    isItemFullyCompleted(item)
+  const completedItems = localList.items.filter(
+    (item) => isItemFullyCompleted(item) && itemMatchesTagFilter(item)
   );
 
   return {
@@ -824,6 +859,10 @@ export const useChecklist = ({
     handleCopyId,
     incompleteItems,
     completedItems,
+    availableItemTags,
+    selectedItemTags,
+    toggleItemTagFilter,
+    clearItemTagFilters,
     totalCount: localList.items.length,
     deletingItemsCount: itemsToDelete.length,
     pendingTogglesCount: pendingToggles.size,
