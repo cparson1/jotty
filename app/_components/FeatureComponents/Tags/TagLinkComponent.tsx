@@ -106,9 +106,13 @@ export const TagLinkComponent = ({ node }: TagLinkComponentProps) => {
 
 interface TagLinkViewComponentProps {
   tag: string;
+  onClick?: (tag: string) => void;
 }
 
-export const TagLinkViewComponent = ({ tag }: TagLinkViewComponentProps) => {
+export const TagLinkViewComponent = ({
+  tag,
+  onClick,
+}: TagLinkViewComponentProps) => {
   const router = useRouter();
   const [showPopup, setShowPopup] = useState(false);
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
@@ -136,6 +140,10 @@ export const TagLinkViewComponent = ({ tag }: TagLinkViewComponentProps) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (onClick) {
+      onClick(normalizedTag);
+      return;
+    }
     router.push(`/?mode=tags&tag=${encodeURIComponent(normalizedTag)}`);
   };
 

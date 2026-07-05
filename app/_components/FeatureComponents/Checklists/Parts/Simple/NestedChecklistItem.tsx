@@ -42,6 +42,7 @@ interface NestedChecklistItemProps {
   onDelete: (id: string) => void;
   onEdit?: (id: string, text: string) => void;
   onAddSubItem?: (parentId: string, text: string) => void;
+  onTagClick?: (tag: string) => void;
   completed?: boolean;
   isPublicView?: boolean;
   isDeletingItem: boolean;
@@ -63,6 +64,7 @@ const NestedChecklistItemComponent = ({
   onDelete,
   onEdit,
   onAddSubItem,
+  onTagClick,
   completed = false,
   isPublicView = false,
   isDeletingItem,
@@ -270,7 +272,7 @@ const NestedChecklistItemComponent = ({
       }
       parts.push(
         <span key={match.index} onMouseDown={(e) => e.stopPropagation()}>
-          <TagLinkViewComponent tag={match[1]} />
+          <TagLinkViewComponent tag={match[1]} onClick={onTagClick} />
         </span>
       );
       lastIndex = match.index + match[0].length;
@@ -708,6 +710,7 @@ const NestedChecklistItemComponent = ({
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onAddSubItem={onAddSubItem}
+                    onTagClick={onTagClick}
                     isDeletingItem={isDeletingItem}
                     isDragDisabled={isDragDisabled || draggedItemId === item.id}
                     isPublicView={isPublicView}

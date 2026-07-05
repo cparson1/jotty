@@ -11,6 +11,7 @@ interface VirtualizedChecklistItemsProps {
   onDelete: (itemId: string) => void;
   onEdit?: (itemId: string, text: string) => void;
   onAddSubItem?: (parentId: string, text: string) => void;
+  onTagClick?: (tag: string) => void;
   isDeletingItem: boolean;
   checklist: Checklist;
   className?: string;
@@ -25,6 +26,7 @@ const VirtualizedChecklistItems = memo(
     onDelete,
     onEdit,
     onAddSubItem,
+    onTagClick,
     isDeletingItem,
     checklist,
     className,
@@ -72,6 +74,7 @@ const VirtualizedChecklistItems = memo(
               onDelete={onDelete}
               onEdit={onEdit}
               onAddSubItem={onAddSubItem}
+              onTagClick={onTagClick}
               isDeletingItem={isDeletingItem}
               isDragDisabled={false}
               checklist={checklist}

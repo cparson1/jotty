@@ -37,6 +37,24 @@ time, not stored as a separate field.
   `nl`, `pirate`, `pl`, `pt`, `ru`, `tr`, `zh`) — verified with
   `node scripts/translations/compare-translations.js` (exits clean).
 
+### 4. Clicking an inline `#tag` on an item now filters instead of navigating
+- Previously, clicking the underlined `#tag` rendered inline in an item's
+  text (via `TagLinkViewComponent` in `app/_components/FeatureComponents/Tags/TagLinkComponent.tsx`)
+  always navigated to the global `/?mode=tags&tag=...` view.
+- `TagLinkViewComponent` now accepts an optional `onClick?: (tag: string) => void`;
+  when provided it's called instead of the `router.push` navigation.
+- `NestedChecklistItem.tsx` accepts a new `onTagClick?: (tag: string) => void`
+  prop, threads it into `renderTextWithHashtags`'s `TagLinkViewComponent`
+  calls, and passes it down through its own recursive child-item rendering.
+- `VirtualizedChecklistItems.tsx` accepts and threads the same prop.
+- `ChecklistBody.tsx` passes `onTagClick={toggleItemTagFilter}` at all four
+  `NestedChecklistItem`/`VirtualizedChecklistItems` render sites (incomplete/
+  completed × virtualized/non-virtualized).
+- Net effect: clicking `#dairy` on an item toggles `dairy` into/out of the
+  item-tag filter selection (same as clicking the pill), instead of leaving
+  the checklist. The `TagLinkComponent` used inside the TipTap editor (notes)
+  is untouched — only the checklist item view path got the new prop.
+
 ## Verified working (manual browser test, 2026-07-04)
 - Ran `yarn install` + `yarn dev`, created a simple checklist, added items
   `Milk #dairy`, `Cheese #dairy`, `Bread #bakery`.
@@ -69,6 +87,24 @@ time, not stored as a separate field.
    receives the already-filtered `items` array as a prop, so it should just
    work, but wasn't specifically exercised in manual testing (test checklist
    only had 3 items).
+
+## Dev-mode caching gotcha (fixed) — read this if changes stop showing up
+`next.config.mjs` had a `headers()` rule applying
+`Cache-Control: public, max-age=31536000, immutable` to `*.js`/`*.css`
+(intended for production's content-addressed `/_next/static` assets). In
+Turbopack **dev** mode, chunk URLs are stable across restarts (not
+content-hashed the way prod build output is), so the browser was permanently
+caching the first-ever version of each JS chunk it loaded and silently
+serving that stale copy forever after — surviving full dev-server restarts
+and even `.next` cache wipes, because the staleness lived in the *browser's*
+HTTP cache, not the server. Symptom: edits to a component (e.g. adding a new
+prop) have zero effect in the browser no matter how much you restart the
+server, until eventually a mismatched-module-version runtime error appears.
+Fixed by gating that `headers()` rule on `process.env.NODE_ENV === "production"`
+(returns `[]` in dev). If you ever hit "changes aren't showing up" again
+after this, it's almost certainly this same class of issue re-appearing
+elsewhere — check for other custom cache headers before assuming Turbopack
+itself is broken.
 
 ## Environment notes (for resuming on this machine)
 - Repo lives at `C:\dev\jotty`, cloned from `https://github.com/cparson1/jotty`.
