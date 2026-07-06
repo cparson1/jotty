@@ -1,5 +1,94 @@
 # Jotty: Per-Item Tag Filtering — Status
 
+## Session 3 addition: Undo toast + drag-to-recategorize
+
+### Undo toast (check/uncheck + drag reorder)
+- `app/_components/GlobalComponents/Feedback/Toast.tsx`: `Toast` interface
+  gained `action?: { label: string; onClick: () => void }`; renders a text
+  button next to the close (×) button. This was previously unused by any
+  call site in the app — first consumer.
+- `app/_consts/checklists.ts`: `UNDO_TOAST_DURATION_SECONDS = 5` — a plain
+  code constant, **not** wired into the profile/settings UI. Change this
+  value directly if you want a different duration; deliberately skipped the
+  full settings-UI route (type + zod schema + UserPreferencesTab UI + 14
+  locale files) since this is a personal fork and the constant is trivial to
+  edit directly.
+- `app/_hooks/useChecklist.tsx`:
+  - `handleToggleItem` now calls `showToast` after queuing the optimistic
+    toggle, with `title` = the item's text (category-stripped via
+    `stripItemCategoryFromContent`) and `action.onClick` = calling
+    `handleToggleItem(itemId, !completed)` again — undo is just "redo the
+    opposite toggle," which is correct regardless of the existing 500ms
+    `pendingToggles` debounce/sync timing.
+  - `handleDragEnd` captures an `undoTarget` (an anchor sibling — or parent,
+    for the "drop into" case — to recreate the item's pre-drag position)
+    **before** mutating anything, computed from `activeInfo.siblings`/`index`
+    at their pre-move values. After a successful `reorderItems` persist, it
+    shows an undo toast whose action constructs a synthetic `DragEndEvent`
+    (`{ active: { id }, over: { id, data } }` shaped to match exactly what
+    `handleDragEnd` destructures) and re-invokes `handleDragEnd` with it —
+    reusing 100% of the existing, working reorder logic rather than
+    duplicating it. Calling undo on a drag-undo naturally chains (undo of an
+    undo works, same as the toggle case), since it's just another drag move.
+  - If `activeInfo.siblings.length === 1` **and** the item had no parent
+    (i.e. it was the only item in the entire root list), `undoTarget` stays
+    `null` and no undo toast is shown for that drag — there's no valid
+    anchor to reconstruct the position from. Edge case, not expected to come
+    up often.
+
+### Drag-to-recategorize + missing drop indicators
+- Previously: `@category` grouping (see below) was purely position-blind —
+  dragging an item into a different category's visual section wouldn't
+  actually change its category (since category is derived from the item's
+  own `@tag` text, not array position), so it would appear to "snap back" to
+  its original section after the drop completed and groups recomputed.
+- Fixed by making the drag itself rewrite the item's text:
+  - `app/_utils/tag-utils.ts`: new `setItemCategoryInContent(content, newCategory)`
+    — strips any existing `@category` then appends `@newCategory` (or just
+    strips, if `newCategory` is `null`, i.e. dropping into the uncategorized
+    zone).
+  - `handleDragEnd` (`useChecklist.tsx`) now computes `activeCategory` /
+    `overCategory` via `getItemCategory` on the dragged item and the anchor
+    item at the drop location. If they differ (and it's not a "drop into"
+    /nesting move — nesting is left untouched, category recategorization
+    only applies to sibling-reorder drops), the dragged item's text is
+    rewritten in both the optimistic local update and persisted via a
+    follow-up `updateItem` call after `reorderItems` succeeds.
+  - **How target category is determined**: simply `getItemCategory` of
+    whatever item you drop next to/before/after (the "anchor"). Drop next to
+    an `@dairy`-tagged item → you become `@dairy`. Drop next to an
+    uncategorized item → your `@category` tag is stripped. No new drop-zone
+    metadata was needed — the existing anchor-item-based reorder mechanics
+    already tell us exactly which category's neighborhood we landed in.
+  - Undo naturally reverses the recategorization too, with zero special
+    casing: undo re-invokes `handleDragEnd` targeting the *original*
+    neighborhood's anchor item, so the same category-mismatch check fires
+    again and restores the original tag.
+- `ChecklistBody.tsx`: added the missing `DropIndicator` before the first
+  item and after each item *inside* every `CategorySection` (previously only
+  the trailing uncategorized-items list had these). Now there's a visible
+  insertion line everywhere you can actually drop, including within and at
+  the boundaries of category groups.
+- **Known gaps, not fixed:**
+  - Dropping into a **collapsed** category section isn't possible (no items
+    are rendered in the DOM while collapsed, so there's nothing to anchor a
+    `DropIndicator` to) — expand it first.
+  - Dropping into a category whose visible members are all hidden by the
+    active `#hashtag` filter (`matchedCount === 0`, `totalCount > 0`) has no
+    anchor either, same reason.
+  - Recategorization only fires for top-level sibling reorders, not for
+    "drop into" (nesting) moves — nesting an item under another doesn't
+    change its category.
+- **Not verified via automated browser drag simulation** — dnd-kit's
+  keyboard sensor didn't respond to synthetic (untrusted) `KeyboardEvent`s
+  dispatched via automation, and simulating a real pointer drag sequence
+  wasn't attempted. The toggle-undo path *was* fully verified end-to-end in
+  the browser (toast appears, Undo reverts, natural expiry leaves the change
+  in place). Manually verify: (1) drag within a category, (2) drag between
+  two categories (confirm the `@tag` in the item's text actually changes),
+  (3) drag into the uncategorized zone (confirm `@tag` is stripped), (4) undo
+  each of those.
+
 ## Status: Shipped for personal use (simple checklists only)
 
 This feature lets you filter items *within* a single simple checklist by

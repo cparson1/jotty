@@ -243,6 +243,16 @@ export const ChecklistBody = ({
                         matchedCount={group.matchedCount}
                         totalCount={group.totalCount}
                       >
+                        {group.items.length > 0 && (
+                          <DropIndicator
+                            id={`drop-before::${group.items[0].id}`}
+                            data={{
+                              type: "drop-indicator",
+                              position: "before",
+                              targetId: group.items[0].id,
+                            }}
+                          />
+                        )}
                         {group.items.map((item, index) => (
                           <div key={item.id}>
                             <NestedChecklistItem
@@ -266,6 +276,14 @@ export const ChecklistBody = ({
                               isAnyItemDragging={isDragging}
                               overItem={overItem}
                               draggedItemId={activeItem?.id}
+                            />
+                            <DropIndicator
+                              id={`drop-after::${item.id}`}
+                              data={{
+                                type: "drop-indicator",
+                                position: "after",
+                                targetId: item.id,
+                              }}
                             />
                           </div>
                         ))}
@@ -350,6 +368,16 @@ export const ChecklistBody = ({
                         matchedCount={group.matchedCount}
                         totalCount={group.totalCount}
                       >
+                        {group.items.length > 0 && (
+                          <DropIndicator
+                            id={`drop-before::${group.items[0].id}`}
+                            data={{
+                              type: "drop-indicator",
+                              position: "before",
+                              targetId: group.items[0].id,
+                            }}
+                          />
+                        )}
                         {group.items.map((item, index) => (
                           <div key={item.id}>
                             <NestedChecklistItem
@@ -376,6 +404,14 @@ export const ChecklistBody = ({
                               isAnyItemDragging={isDragging}
                               overItem={overItem}
                               draggedItemId={activeItem?.id}
+                            />
+                            <DropIndicator
+                              id={`drop-after::${item.id}`}
+                              data={{
+                                type: "drop-indicator",
+                                position: "after",
+                                targetId: item.id,
+                              }}
                             />
                           </div>
                         ))}

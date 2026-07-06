@@ -37,7 +37,11 @@ import { ConfirmModal } from "@/app/_components/GlobalComponents/Modals/Confirma
 import {
   extractHashtagsFromContent,
   extractItemCategoryFromContent,
+  setItemCategoryInContent,
+  stripItemCategoryFromContent,
 } from "../_utils/tag-utils";
+import { useToast } from "@/app/_providers/ToastProvider";
+import { UNDO_TOAST_DURATION_SECONDS } from "@/app/_consts/checklists";
 
 interface UseChecklistProps {
   list: Checklist;
@@ -96,6 +100,7 @@ export const useChecklist = ({
 }: UseChecklistProps) => {
   const t = useTranslations();
   const router = useRouter();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBulkPasteModal, setShowBulkPasteModal] = useState(false);
@@ -323,6 +328,7 @@ export const useChecklist = ({
   const handleToggleItem = async (itemId: string, completed: boolean) => {
     const now = new Date().toISOString();
     const currentUser = await getCurrentUser();
+    const toggledItem = findItemById(localList.items, itemId);
 
     setLocalList((currentList) => {
       const findAndUpdateItem = (
@@ -384,6 +390,20 @@ export const useChecklist = ({
     });
 
     setPendingToggles((prev) => new Map(prev).set(itemId, completed));
+
+    if (toggledItem) {
+      showToast({
+        type: "info",
+        title: stripItemCategoryFromContent(
+          toggledItem.text.split(" | metadata:")[0].trim()
+        ),
+        duration: UNDO_TOAST_DURATION_SECONDS * 1000,
+        action: {
+          label: t("common.undo"),
+          onClick: () => handleToggleItem(itemId, !completed),
+        },
+      });
+    }
   };
 
   const handleEditItem = async (itemId: string, text: string) => {
@@ -522,6 +542,37 @@ export const useChecklist = ({
 
     if (!activeInfo || !overInfo) return;
 
+    let undoTarget:
+      | { overItemId: string; isDropInto: boolean; position: "before" | "after" }
+      | null = null;
+    if (activeInfo.index > 0) {
+      undoTarget = {
+        overItemId: activeInfo.siblings[activeInfo.index - 1].id,
+        isDropInto: false,
+        position: "after",
+      };
+    } else if (activeInfo.siblings.length > 1) {
+      undoTarget = {
+        overItemId: activeInfo.siblings[1].id,
+        isDropInto: false,
+        position: "before",
+      };
+    } else if (activeInfo.parent) {
+      undoTarget = {
+        overItemId: activeInfo.parent.id,
+        isDropInto: true,
+        position: "before",
+      };
+    }
+    const draggedItem = activeInfo.item;
+
+    const activeCategory = getItemCategory(activeInfo.item);
+    const overCategory = getItemCategory(overInfo.item);
+    const shouldRecategorize = !isDropInto && overCategory !== activeCategory;
+    const newItemText = shouldRecategorize
+      ? setItemCategoryInContent(activeInfo.item.text, overCategory)
+      : activeInfo.item.text;
+
     const cloneItems = (items: Item[]): Item[] => {
       return items.map((item) => ({
         ...item,
@@ -536,6 +587,10 @@ export const useChecklist = ({
       const overInNew = findItemWithParent(newItems, targetItemId);
 
       if (!activeInNew || !overInNew) return list;
+
+      if (shouldRecategorize) {
+        activeInNew.item.text = newItemText;
+      }
 
       activeInNew.siblings.splice(activeInNew.index, 1);
 
@@ -605,6 +660,56 @@ export const useChecklist = ({
     const result = await reorderItems(formData);
     if (!result.success) {
       setLocalList(list);
+      return;
+    }
+
+    if (shouldRecategorize) {
+      const currentUser = await getCurrentUser();
+      const textFormData = new FormData();
+      textFormData.append("listId", localList.id);
+      textFormData.append("itemId", activeId);
+      textFormData.append("text", newItemText);
+      textFormData.append("category", localList.category || "Uncategorized");
+      textFormData.append(
+        "user",
+        localList.owner || currentUser?.username || ""
+      );
+      await updateItem(localList, textFormData);
+    }
+
+    if (undoTarget) {
+      const target = undoTarget;
+      showToast({
+        type: "info",
+        title: stripItemCategoryFromContent(
+          draggedItem.text.split(" | metadata:")[0].trim()
+        ),
+        duration: UNDO_TOAST_DURATION_SECONDS * 1000,
+        action: {
+          label: t("common.undo"),
+          onClick: () => {
+            const syntheticEvent = {
+              active: { id: activeId },
+              over: target.isDropInto
+                ? {
+                    id: `drop-into-item::${target.overItemId}`,
+                    data: { current: { allowDropInto: true } },
+                  }
+                : {
+                    id: `drop-${target.position}::${target.overItemId}`,
+                    data: {
+                      current: {
+                        type: "drop-indicator",
+                        position: target.position,
+                        targetId: target.overItemId,
+                      },
+                    },
+                  },
+            } as unknown as DragEndEvent;
+            handleDragEnd(syntheticEvent);
+          },
+        },
+      });
     }
   };
 

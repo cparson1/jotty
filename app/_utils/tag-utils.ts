@@ -159,6 +159,15 @@ export const stripItemCategoryFromContent = (content: string): string => {
     .trim();
 };
 
+export const setItemCategoryInContent = (
+  content: string,
+  newCategory: string | null,
+): string => {
+  const stripped = stripItemCategoryFromContent(content);
+  if (!newCategory) return stripped;
+  return stripped ? `${stripped} @${newCategory}` : `@${newCategory}`;
+};
+
 export const tagMatchesFilter = (
   noteTag: string,
   filterTag: string,

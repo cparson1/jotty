@@ -14,6 +14,7 @@ export interface Toast {
   title: React.ReactNode;
   message?: string;
   duration?: number;
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastProps {
@@ -41,6 +42,11 @@ export const Toast = ({ toast, onRemove }: ToastProps) => {
   const handleRemove = () => {
     setIsVisible(false);
     setTimeout(() => onRemove(toast.id), 300);
+  };
+
+  const handleAction = () => {
+    toast.action?.onClick();
+    handleRemove();
   };
 
   const getIcon = () => {
@@ -80,6 +86,14 @@ export const Toast = ({ toast, onRemove }: ToastProps) => {
           <p className="text-md lg:text-sm opacity-90 mt-1">{toast.message}</p>
         )}
       </div>
+      {toast.action && (
+        <button
+          onClick={handleAction}
+          className="flex-shrink-0 text-md lg:text-sm font-semibold underline underline-offset-2 hover:no-underline transition-colors"
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         onClick={handleRemove}
         className="flex-shrink-0 p-1 rounded-jotty hover:bg-black/10 transition-colors"

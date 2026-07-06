@@ -7,6 +7,11 @@ import { Modes, TaskStatus, TaskStatusLabels } from "../_types/enums";
 
 export const CHECKLISTS_FOLDER = Modes.CHECKLISTS;
 
+// How long the "Undo" toast stays on screen after checking/unchecking or
+// reordering an item, in seconds. Not exposed in the settings UI — change
+// this value directly if you want a different duration.
+export const UNDO_TOAST_DURATION_SECONDS = 5;
+
 export const TASK_STATUS_CONFIG = {
   [TaskStatus.TODO]: {
     title: TaskStatusLabels.TODO,
