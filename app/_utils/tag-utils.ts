@@ -152,6 +152,13 @@ export const extractItemCategoryFromContent = (
   return match ? normalizeTag(match[1]) : null;
 };
 
+export const stripItemCategoryFromContent = (content: string): string => {
+  return content
+    .replace(/(^|[\s(])@[a-zA-Z][a-zA-Z0-9_-]*/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+};
+
 export const tagMatchesFilter = (
   noteTag: string,
   filterTag: string,

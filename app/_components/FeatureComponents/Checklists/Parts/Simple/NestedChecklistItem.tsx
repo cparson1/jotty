@@ -23,6 +23,7 @@ import { useEmojiCache } from "@/app/_hooks/useEmojiCache";
 import { Checklist, Item } from "@/app/_types";
 import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { TagLinkViewComponent } from "@/app/_components/FeatureComponents/Tags/TagLinkComponent";
+import { stripItemCategoryFromContent } from "@/app/_utils/tag-utils";
 import { Input } from "@/app/_components/GlobalComponents/FormElements/Input";
 import { useTagSuggestions } from "@/app/_hooks/useTagSuggestions";
 import { TagMentionsList } from "@/app/_components/FeatureComponents/Notes/Parts/TipTap/CustomExtensions/TagMentionsList";
@@ -257,7 +258,9 @@ const NestedChecklistItemComponent = ({
     }
   };
 
-  const cleanText = item.text.split(" | metadata:")[0].trim();
+  const cleanText = stripItemCategoryFromContent(
+    item.text.split(" | metadata:")[0].trim()
+  );
   const displayText = showEmojis ? `${emoji}  ${cleanText}` : cleanText;
   const hasChildren = item.children && item.children.length > 0;
 
