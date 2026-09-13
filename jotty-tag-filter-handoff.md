@@ -1,5 +1,36 @@
 # Jotty: Per-Item Tag Filtering — Status
 
+## Session 4 addition: category display polish + emoji dictionary
+
+### Category header display
+- `CategorySection.tsx` no longer shows the `@` prefix (`produce (2/6)` not
+  `@produce (2/6)`).
+- Added an icon to the header, reusing the exact same mechanism line items
+  already use (`useEmojiCache` + `useSettings().showEmojis`) — looked up
+  against the category name, not the items inside it.
+- `@category` tags now accept `&` as well as letters/digits/`_`/`-`
+  (`extractItemCategoryFromContent` / `stripItemCategoryFromContent` regexes
+  in `tag-utils.ts` updated), and `getCategoryDisplayName(category)` (new,
+  `tag-utils.ts`) converts underscores to spaces for display only — the
+  stored/matched tag value is untouched. So typing `@meat_&_protein` groups
+  under a header reading "meat & protein", while `getItemCategory` still
+  returns the literal `meat_&_protein` string for grouping/matching
+  purposes. The emoji lookup runs on the *display* name (spaces restored)
+  so multi-word categories still resolve per-word matches correctly (e.g.
+  "meat & protein" → splits into ["meat","&","protein"], matches "meat").
+
+### Emoji dictionary additions (`app/_consts/emojis.ts`)
+Added generic single-word entries for broad grocery categories that didn't
+already have a match: `bakery`🍞, `condiments`🧂, `dairy`🥛, `deli`🥪,
+`dips`🥣, `frozen`🧊, `household`🧻, `kids`🍱, `pantry`🥫, `produce`🥬,
+`seafood`🦐, `snacks`🍿, `specialty`🌏. (`meat`🥩 and `beverage`🥤 already
+existed — the latter already covers `beverages` via the existing
+singular-fallback in `findMatchingEmojiSync`.) This is a flat exact-word
+dictionary with basic singular/plural normalization only — no fuzzy or
+semantic matching, so it only resolves when the category name itself (or
+one of its words) is a literal key. Add more words the same way if new
+categories come up.
+
 ## Session 3 addition: Undo toast + drag-to-recategorize
 
 ### Undo toast (check/uncheck + drag reorder)

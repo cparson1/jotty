@@ -147,17 +147,20 @@ export const extractItemCategoryFromContent = (
     /```[\s\S]*?```|`[^`]+`|<code[^>]*>[\s\S]*?<\/code>|<pre[^>]*>[\s\S]*?<\/pre>/gi;
   const contentWithoutCode = content.replace(codeBlockRegex, "");
 
-  const categoryRegex = /(?:^|[\s(])@([a-zA-Z][a-zA-Z0-9_-]*)/;
+  const categoryRegex = /(?:^|[\s(])@([a-zA-Z][a-zA-Z0-9_&-]*)/;
   const match = categoryRegex.exec(contentWithoutCode);
   return match ? normalizeTag(match[1]) : null;
 };
 
 export const stripItemCategoryFromContent = (content: string): string => {
   return content
-    .replace(/(^|[\s(])@[a-zA-Z][a-zA-Z0-9_-]*/g, "$1")
+    .replace(/(^|[\s(])@[a-zA-Z][a-zA-Z0-9_&-]*/g, "$1")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 };
+
+export const getCategoryDisplayName = (category: string): string =>
+  category.replace(/_/g, " ");
 
 export const setItemCategoryInContent = (
   content: string,
