@@ -18,6 +18,14 @@ const nextConfig = {
     proxyClientMaxBodySize: maxBodySize,
   },
   allowedDevOrigins: process.env.DEV_ORIGINS ? process.env.DEV_ORIGINS.split(',') : [],
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/oauth-protected-resource",
+        destination: "/api/well-known/oauth-protected-resource",
+      },
+    ];
+  },
   images: {
     unoptimized: true,
   },
