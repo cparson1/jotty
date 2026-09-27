@@ -48,7 +48,8 @@ export const proxy = async (request: NextRequest) => {
     pathname.startsWith("/api/auth/check-session") ||
     pathname.startsWith("/api/auth/login") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/public/")
+    pathname.startsWith("/public/") ||
+    pathname.startsWith("/.well-known/")
   ) {
     const response = NextResponse.next();
     response.headers.set("x-pathname", pathname);
