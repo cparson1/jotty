@@ -103,7 +103,11 @@ async function uploadGroceryList(args: {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = await verifyMcpToken(request.headers.get("authorization"));
+  const origin = process.env.APP_URL || request.nextUrl.origin;
+  const payload = await verifyMcpToken(
+    request.headers.get("authorization"),
+    `${origin}/api/mcp`,
+  );
   if (!payload) {
     return unauthorized(request);
   }

@@ -18,19 +18,26 @@ async function getJwks() {
 }
 
 // Verifies the MCP connector's OAuth bearer token against Authelia's OIDC
-// provider. Deliberately doesn't check `aud` - Authelia's audience claim for
-// a plain (non resource-indicator) authorization_code grant is the client_id,
-// but this may vary, and a valid signature from our own Authelia instance is
-// the real trust boundary for this single-user, personal deployment.
+// provider. `expectedAudience` should be this resource's own identifier
+// (origin + /api/mcp) - Authelia's claude-mcp client is restricted (via its
+// `audience` whitelist) to only request that resource per RFC 8707, so a
+// token's `aud` claim should always equal it. Checking this here is what
+// stops a token issued for some *other* future OIDC client/resource on this
+// same Authelia instance from being replayed against this endpoint.
 export async function verifyMcpToken(
   authHeader: string | null,
+  expectedAudience: string,
 ): Promise<JWTPayload | null> {
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7).trim();
   if (!token) return null;
   try {
     const keys = await getJwks();
-    const { payload } = await jwtVerify(token, keys, { issuer, clockTolerance: 5 });
+    const { payload } = await jwtVerify(token, keys, {
+      issuer,
+      audience: expectedAudience,
+      clockTolerance: 5,
+    });
     return payload;
   } catch (error) {
     console.error("MCP bearer token verification failed:", error);
