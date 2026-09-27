@@ -20,7 +20,7 @@ type GroceryItemInput = {
 };
 
 function unauthorized(request: NextRequest) {
-  const origin = request.nextUrl.origin;
+  const origin = process.env.APP_URL || request.nextUrl.origin;
   return NextResponse.json(
     { error: "unauthorized" },
     {

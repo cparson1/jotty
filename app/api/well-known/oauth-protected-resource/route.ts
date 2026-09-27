@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 // next.config.mjs (Next.js app-router route segments can't start with a
 // dot). RFC 9728 protected resource metadata for /api/mcp.
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin;
+  const origin = process.env.APP_URL || request.nextUrl.origin;
   const issuer = (process.env.MCP_OIDC_ISSUER || "https://auth.parcelisk.net").replace(/\/$/, "");
 
   return NextResponse.json({
