@@ -84,6 +84,8 @@ export const BUILT_IN_THEMES = [
   { id: "rose-pine" as const, name: "Rose Pine", icon: Tree07Icon },
   { id: "gruvbox" as const, name: "Gruvbox", icon: FireIcon },
   { id: "solarized-dark" as const, name: "Solarized Dark", icon: Leaf04Icon },
+  { id: "mise-light" as const, name: "Mise", icon: Leaf04Icon },
+  { id: "mise-dark" as const, name: "Mise (dark)", icon: Tree03Icon },
 ];
 
 export const getAllThemes = async (t?: (key: string) => string) => {
@@ -160,6 +162,8 @@ const THEME_BACKGROUND_COLORS: Record<string, string> = {
   "solarized-dark": rgbToHex("0 43 54"),
   sakura: rgbToHex("249 249 249"),
   system: rgbToHex("255 255 255"),
+  "mise-light": rgbToHex("250 247 240"),
+  "mise-dark": rgbToHex("23 52 4"),
 };
 
 export const THEME_PREVIEW_COLORS: Record<string, { background: string; primary: string }> = {
@@ -184,6 +188,8 @@ export const THEME_PREVIEW_COLORS: Record<string, { background: string; primary:
   "rose-pine": { background: "25 23 36", primary: "196 167 231" },
   gruvbox: { background: "40 40 40", primary: "250 189 47" },
   "solarized-dark": { background: "0 43 54", primary: "38 139 210" },
+  "mise-light": { background: "250 247 240", primary: "99 153 34" },
+  "mise-dark": { background: "23 52 4", primary: "151 196 89" },
 };
 
 export const getThemeBackgroundColor = (themeId: string): string => {
