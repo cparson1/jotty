@@ -26,10 +26,8 @@ import {
   createSubItem,
 } from "@/app/_server/actions/checklist-item";
 import { useRouter } from "next/navigation";
-import {
-  getCurrentUser,
-  getUserByChecklist,
-} from "@/app/_server/actions/users";
+import { getUserByChecklist } from "@/app/_server/actions/users";
+import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { copyTextToClipboard } from "../_utils/global-utils";
 import { encodeCategoryPath } from "../_utils/global-utils";
 import { areAllItemsCompleted } from "../_utils/checklist-utils";
@@ -101,6 +99,7 @@ export const useChecklist = ({
   const t = useTranslations();
   const router = useRouter();
   const { showToast } = useToast();
+  const { user: currentUser } = useAppMode();
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBulkPasteModal, setShowBulkPasteModal] = useState(false);
@@ -327,7 +326,6 @@ export const useChecklist = ({
 
   const handleToggleItem = async (itemId: string, completed: boolean) => {
     const now = new Date().toISOString();
-    const currentUser = await getCurrentUser();
     const toggledItem = findItemById(localList.items, itemId);
 
     setLocalList((currentList) => {
@@ -408,7 +406,6 @@ export const useChecklist = ({
 
   const handleEditItem = async (itemId: string, text: string) => {
     const formData = new FormData();
-    const currentUser = await getCurrentUser();
     formData.append("listId", localList.id);
     formData.append("itemId", itemId);
     formData.append("text", text);
@@ -664,7 +661,6 @@ export const useChecklist = ({
     }
 
     if (shouldRecategorize) {
-      const currentUser = await getCurrentUser();
       const textFormData = new FormData();
       textFormData.append("listId", localList.id);
       textFormData.append("itemId", activeId);
@@ -826,7 +822,6 @@ export const useChecklist = ({
     formData.append("text", text);
     formData.append("category", localList.category || "Uncategorized");
 
-    const currentUser = await getCurrentUser();
     if (recurrence) {
       formData.append("recurrence", JSON.stringify(recurrence));
     }
