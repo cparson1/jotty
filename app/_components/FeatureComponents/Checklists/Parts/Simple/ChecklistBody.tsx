@@ -221,7 +221,8 @@ export const ChecklistBody = ({
                 onClearAll={() => handleClearAll("incomplete")}
                 isLoading={isLoading}
               >
-                {incompleteItems.length >= 50 ? (
+                {incompleteItems.length >= 50 &&
+                incompleteCategoryGroups.length === 0 ? (
                   <VirtualizedChecklistItems
                     items={incompleteItems}
                     onToggle={handleToggleItem}
@@ -346,7 +347,8 @@ export const ChecklistBody = ({
                 isLoading={isLoading}
                 isCompleted
               >
-                {completedItems.length >= 50 ? (
+                {completedItems.length >= 50 &&
+                completedCategoryGroups.length === 0 ? (
                   <VirtualizedChecklistItems
                     items={completedItems}
                     onToggle={handleToggleItem}
