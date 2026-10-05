@@ -22,7 +22,6 @@ import { useSettings } from "@/app/_utils/settings-store";
 import { useEmojiCache } from "@/app/_hooks/useEmojiCache";
 import { Checklist, Item } from "@/app/_types";
 import { useAppMode } from "@/app/_providers/AppModeProvider";
-import { TagLinkViewComponent } from "@/app/_components/FeatureComponents/Tags/TagLinkComponent";
 import { stripItemCategoryFromContent } from "@/app/_utils/tag-utils";
 import { Input } from "@/app/_components/GlobalComponents/FormElements/Input";
 import { useTagSuggestions } from "@/app/_hooks/useTagSuggestions";
@@ -265,23 +264,21 @@ const NestedChecklistItemComponent = ({
   const hasChildren = item.children && item.children.length > 0;
 
   const renderTextWithHashtags = (text: string): React.ReactNode[] => {
-    const hashtagPattern = /#([a-zA-Z][a-zA-Z0-9_/-]*)/g;
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-    while ((match = hashtagPattern.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index));
-      }
+    const hashtagPattern = /(^|\s+)#([a-zA-Z][a-zA-Z0-9_/-]*)/g;
+    const tags: string[] = [];
+    const stripped = text
+      .replace(hashtagPattern, (_match, _lead, tag: string) => {
+        tags.push(tag);
+        return "";
+      })
+      .trimEnd();
+    const parts: React.ReactNode[] = [stripped];
+    if (tags.length > 0) {
       parts.push(
-        <span key={match.index} onMouseDown={(e) => e.stopPropagation()}>
-          <TagLinkViewComponent tag={match[1]} onClick={onTagClick} />
+        <span key="item-tags" className="text-muted-foreground">
+          {` (${tags.join(", ")})`}
         </span>
       );
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
     }
     return parts;
   };
@@ -455,9 +452,9 @@ const NestedChecklistItemComponent = ({
                     onMouseLeave={() => setIsActive(false)}
                   >
                     {item.completed || completed ? (
-                      <CheckmarkSquare02Icon className="h-6 w-6 min-w-8 text-primary mr-2 !stroke-1" />
+                      <CheckmarkSquare02Icon className="h-8 w-8 lg:h-6 lg:w-6 shrink-0 text-primary mr-2 !stroke-1" />
                     ) : (
-                      <SquareIcon className="h-6 w-6 min-w-8 text-muted-foreground mr-2 !stroke-1" />
+                      <SquareIcon className="h-8 w-8 lg:h-6 lg:w-6 shrink-0 text-muted-foreground mr-2 !stroke-1" />
                     )}
 
                     {item.recurrence && user?.enableRecurrence === "enable" && (
