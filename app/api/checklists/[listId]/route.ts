@@ -18,6 +18,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ listI
 
       const formData = new FormData();
       formData.append("id", list.id);
+      if (list.uuid) formData.append("uuid", list.uuid);
       formData.append("title", title ?? list.title);
       formData.append("category", category ?? list.category ?? "Uncategorized");
       formData.append("originalCategory", list.category || "Uncategorized");
