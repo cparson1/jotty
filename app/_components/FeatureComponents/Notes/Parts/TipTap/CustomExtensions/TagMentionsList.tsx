@@ -19,12 +19,14 @@ interface TagMentionItem {
 interface TagMentionsListProps {
   items: TagMentionItem[];
   command: (item: TagMentionItem) => void;
+  prefix?: string;
+  showSearch?: boolean;
 }
 
 export const TagMentionsList = forwardRef<
   { onKeyDown: (event: KeyboardEvent) => boolean; focusSearch: () => void },
   TagMentionsListProps
->(({ items, command }, ref) => {
+>(({ items, command, prefix = "#", showSearch = true }, ref) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +63,7 @@ export const TagMentionsList = forwardRef<
 
   useImperativeHandle(ref, () => ({
     onKeyDown: (event: KeyboardEvent) => {
-      if (event.key === "Tab") {
+      if (event.key === "Tab" && showSearch) {
         focusSearch();
         event.preventDefault();
         return true;
@@ -89,17 +91,19 @@ export const TagMentionsList = forwardRef<
 
   return (
     <div className="bg-card mt-4 border border-border rounded-jotty shadow-lg p-3 min-w-64 max-w-80">
-      <div className="relative mb-3">
-        <Search01Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          placeholder={t("notes.searchTags")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-3 py-2 text-md lg:text-sm bg-background border border-input rounded-jotty focus:outline-none focus:ring-none focus:ring-ring focus:border-transparent"
-        />
-      </div>
+      {showSearch && (
+        <div className="relative mb-3">
+          <Search01Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder={t("notes.searchTags")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-3 py-2 text-md lg:text-sm bg-background border border-input rounded-jotty focus:outline-none focus:ring-none focus:ring-ring focus:border-transparent"
+          />
+        </div>
+      )}
 
       <div className="max-h-60 overflow-y-auto">
         {filteredItems.length ? (
@@ -116,7 +120,10 @@ export const TagMentionsList = forwardRef<
                 onClick={() => selectItem(index)}
               >
                 <Tag01Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="font-medium truncate">#{item.display}</span>
+                <span className="font-medium truncate">
+                  {prefix}
+                  {item.display}
+                </span>
               </button>
             ))}
           </div>

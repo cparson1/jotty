@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Add01Icon,
   TaskAdd01Icon,
@@ -17,6 +17,7 @@ import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { useSettings } from "@/app/_utils/settings-store";
 import { CompletedSuggestionsDropdown } from "@/app/_components/FeatureComponents/Checklists/Parts/Common/CompletedSuggestionsDropdown";
 import { TaskStatus } from "@/app/_types/enums";
+import { extractItemCategoryFromContent } from "@/app/_utils/tag-utils";
 import { useTranslations } from "next-intl";
 import { TagMentionsList } from "@/app/_components/FeatureComponents/Notes/Parts/TipTap/CustomExtensions/TagMentionsList";
 import {
@@ -52,7 +53,11 @@ export const ChecklistHeading = ({
   const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
-  const [tagPopupPos, setTagPopupPos] = useState({ top: 0, left: 0 });
+  const [tagPopupPos, setTagPopupPos] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+  }>({ top: 0, left: 0 });
   const [inputToggled, setInputToggled] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -96,28 +101,78 @@ export const ChecklistHeading = ({
     item.text.toLowerCase().includes(newItemText.toLowerCase().trim())
   );
 
-  const getHashtagQuery = (text: string): string | null => {
-    const full = text.match(/#([a-zA-Z][a-zA-Z0-9_/-]*)$/);
-    if (full) return full[1];
-    const bare = text.match(/#$/);
-    return bare ? "" : null;
+  const getTriggerQuery = (
+    text: string,
+  ): { trigger: "#" | "@"; query: string } | null => {
+    const match = text.match(/(?:^|[\s(])([#@])([a-zA-Z][a-zA-Z0-9_&/-]*)?$/);
+    if (!match) return null;
+    return { trigger: match[1] as "#" | "@", query: match[2] ?? "" };
   };
 
+  const availableCategories = useMemo(() => {
+    const found = new Set<string>();
+    const collect = (items: Item[]) => {
+      for (const item of items) {
+        const category = extractItemCategoryFromContent(item.text || "");
+        if (category) found.add(category);
+        if (item.children?.length) collect(item.children);
+      }
+    };
+    collect(checklist?.items || []);
+    return Array.from(found).sort((a, b) => a.localeCompare(b));
+  }, [checklist?.items]);
+
+  const triggerInfo = getTriggerQuery(newItemText);
+
   const tagItems = (() => {
-    if (!tagsEnabled) return [];
-    const query = getHashtagQuery(newItemText);
-    if (query === null) return [];
-    const lowerQuery = query.toLowerCase();
-    const allTags = Object.keys(tagsIndex);
-    const filtered = allTags
-      .filter((k) => k.includes(lowerQuery))
+    if (!triggerInfo) return [];
+    const lowerQuery = triggerInfo.query.toLowerCase();
+
+    if (triggerInfo.trigger === "#") {
+      if (!tagsEnabled) return [];
+      const allTags = Object.keys(tagsIndex);
+      const filtered = allTags
+        .filter((k) => k.includes(lowerQuery))
+        .slice(0, 9)
+        .map((k) => ({ tag: k, display: k }));
+      if (lowerQuery && !allTags.some((t) => t === lowerQuery)) {
+        filtered.unshift({ tag: lowerQuery, display: lowerQuery });
+      }
+      return filtered;
+    }
+
+    const filtered = availableCategories
+      .filter((c) => c.toLowerCase().includes(lowerQuery))
       .slice(0, 9)
-      .map((k) => ({ tag: k, display: k }));
-    if (lowerQuery && !allTags.some((t) => t === lowerQuery)) {
-      filtered.unshift({ tag: lowerQuery, display: lowerQuery });
+      .map((c) => ({ tag: c, display: c }));
+    if (
+      lowerQuery &&
+      !availableCategories.some((c) => c.toLowerCase() === lowerQuery)
+    ) {
+      filtered.unshift({
+        tag: triggerInfo.query,
+        display: triggerInfo.query,
+      });
     }
     return filtered;
   })();
+
+  const positionTagPopup = () => {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    const popupHeight = 260;
+    const popupWidth = 320;
+    const left = Math.max(
+      8,
+      Math.min(rect.left, window.innerWidth - popupWidth - 8),
+    );
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < popupHeight && rect.top > spaceBelow) {
+      setTagPopupPos({ bottom: window.innerHeight - rect.top + 4, left });
+    } else {
+      setTagPopupPos({ top: rect.bottom + 4, left });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,29 +187,27 @@ export const ChecklistHeading = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewItemText(value);
-    if (tagsEnabled) {
-      const query = getHashtagQuery(value);
-      if (query !== null) {
-        if (inputRef.current) {
-          const rect = inputRef.current.getBoundingClientRect();
-          setTagPopupPos({ top: rect.bottom + 4, left: rect.left });
-        }
-        setShowTagSuggestions(true);
-        setShowSuggestions(false);
-        return;
-      }
-      setShowTagSuggestions(false);
+    const trigger = getTriggerQuery(value);
+    if (trigger && (trigger.trigger === "@" || tagsEnabled)) {
+      positionTagPopup();
+      setShowTagSuggestions(true);
+      setShowSuggestions(false);
+      return;
     }
+    setShowTagSuggestions(false);
     if (shouldShowSuggestions && completedItems.length > 0) {
       setShowSuggestions(true);
     }
   };
 
   const handleTagCommand = (item: { tag: string; display: string }) => {
-    const query = getHashtagQuery(newItemText);
-    if (query !== null) {
-      const prefix = newItemText.slice(0, newItemText.length - (query.length + 1));
-      setNewItemText(`${prefix}#${item.tag} `);
+    const trigger = getTriggerQuery(newItemText);
+    if (trigger) {
+      const prefix = newItemText.slice(
+        0,
+        newItemText.length - (trigger.query.length + 1),
+      );
+      setNewItemText(`${prefix}${trigger.trigger}${item.tag} `);
     }
     setShowTagSuggestions(false);
     inputRef.current?.focus();
@@ -165,6 +218,14 @@ export const ChecklistHeading = ({
     if (e.key === "Escape") {
       setShowTagSuggestions(false);
       e.preventDefault();
+      return;
+    }
+    if (
+      e.key === "Enter" &&
+      triggerInfo?.query &&
+      tagItems[0]?.tag.toLowerCase() === triggerInfo.query.toLowerCase()
+    ) {
+      setShowTagSuggestions(false);
       return;
     }
     const handled = tagMentionsRef.current.onKeyDown(e.nativeEvent);
@@ -290,13 +351,20 @@ export const ChecklistHeading = ({
               {showTagSuggestions && tagItems.length > 0 && (
                 <div
                   ref={tagSuggestionsWrapperRef}
-                  style={{ position: "fixed", top: tagPopupPos.top, left: tagPopupPos.left }}
+                  style={{
+                    position: "fixed",
+                    top: tagPopupPos.top,
+                    bottom: tagPopupPos.bottom,
+                    left: tagPopupPos.left,
+                  }}
                   className="z-[9999]"
                 >
                   <TagMentionsList
                     ref={tagMentionsRef}
                     items={tagItems}
                     command={handleTagCommand}
+                    prefix={triggerInfo?.trigger ?? "#"}
+                    showSearch={false}
                   />
                 </div>
               )}
