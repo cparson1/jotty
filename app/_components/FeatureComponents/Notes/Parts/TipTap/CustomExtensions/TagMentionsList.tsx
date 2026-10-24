@@ -61,8 +61,17 @@ export const TagMentionsList = forwardRef<
 
   useEffect(() => setSelectedIndex(0), [searchQuery]);
 
+  const itemsKey = items.map((item) => item.tag).join("|");
+  useEffect(() => setSelectedIndex(0), [itemsKey]);
+
   useImperativeHandle(ref, () => ({
     onKeyDown: (event: KeyboardEvent) => {
+      if (event.key === "Tab" && !showSearch) {
+        if (!filteredItems.length) return false;
+        enterHandler();
+        return true;
+      }
+
       if (event.key === "Tab" && showSearch) {
         focusSearch();
         event.preventDefault();
