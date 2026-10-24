@@ -17,7 +17,10 @@ import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { useSettings } from "@/app/_utils/settings-store";
 import { CompletedSuggestionsDropdown } from "@/app/_components/FeatureComponents/Checklists/Parts/Common/CompletedSuggestionsDropdown";
 import { TaskStatus } from "@/app/_types/enums";
-import { extractItemCategoryFromContent } from "@/app/_utils/tag-utils";
+import {
+  extractHashtagsFromContent,
+  extractItemCategoryFromContent,
+} from "@/app/_utils/tag-utils";
 import { useTranslations } from "next-intl";
 import { TagMentionsList } from "@/app/_components/FeatureComponents/Notes/Parts/TipTap/CustomExtensions/TagMentionsList";
 import {
@@ -122,6 +125,23 @@ export const ChecklistHeading = ({
     return Array.from(found).sort((a, b) => a.localeCompare(b));
   }, [checklist?.items]);
 
+  // The app-wide tags index is built from metadata-only list reads, which
+  // only carry frontmatter tags - not #tags typed on items - so merge in the
+  // tags actually used in this list.
+  const availableTags = useMemo(() => {
+    const found = new Set<string>(Object.keys(tagsIndex));
+    const collect = (items: Item[]) => {
+      for (const item of items) {
+        extractHashtagsFromContent(item.text || "").forEach((tag) =>
+          found.add(tag),
+        );
+        if (item.children?.length) collect(item.children);
+      }
+    };
+    collect(checklist?.items || []);
+    return Array.from(found).sort((a, b) => a.localeCompare(b));
+  }, [tagsIndex, checklist?.items]);
+
   const triggerInfo = getTriggerQuery(newItemText);
 
   const tagItems = (() => {
@@ -130,7 +150,7 @@ export const ChecklistHeading = ({
 
     if (triggerInfo.trigger === "#") {
       if (!tagsEnabled) return [];
-      const allTags = Object.keys(tagsIndex);
+      const allTags = availableTags;
       const filtered = allTags
         .filter((k) => k.includes(lowerQuery))
         .slice(0, 9)
