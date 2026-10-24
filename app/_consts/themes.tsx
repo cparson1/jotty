@@ -97,7 +97,11 @@ export const getAllThemes = async (t?: (key: string) => string) => {
     colors: THEME_PREVIEW_COLORS[theme.id] || { background: "249 249 249", primary: "157 95 254" },
   }));
 
+  const builtInIds = new Set<string>(BUILT_IN_THEMES.map((theme) => theme.id));
+
   customThemes.forEach((customTheme) => {
+    if (builtInIds.has(customTheme.id)) return;
+
     const iconComponent =
       ICON_MAP[customTheme.icon as keyof typeof ICON_MAP] || PaintBrush04Icon;
 
