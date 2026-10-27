@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         title: note.title,
         category: note.category || "Uncategorized",
         content: note.content,
+        coverImage: note.coverImage,
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,
       }));

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ noteI
                     title: note.title,
                     category: note.category || "Uncategorized",
                     content: note.content,
+                    coverImage: note.coverImage,
                     createdAt: note.createdAt,
                     updatedAt: note.updatedAt,
                     owner: note.owner,
