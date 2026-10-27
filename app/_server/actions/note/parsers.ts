@@ -1,5 +1,6 @@
 import path from "path";
 import { Note } from "@/app/_types";
+import { normalizeCoverImageUrl } from "@/app/_utils/cover-image-utils";
 import {
   extractYamlMetadata,
   extractTitle,
@@ -40,6 +41,7 @@ export const parseMarkdownNote = (
     encrypted: metadata.encrypted || false,
     encryptionMethod: metadata.encryptionMethod,
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
+    coverImage: normalizeCoverImageUrl(metadata.coverImage),
   };
 };
 
@@ -191,6 +193,11 @@ export const noteToMarkdown = (note: Note): string => {
 
   if (note.tags && note.tags.length > 0) {
     metadata.tags = note.tags;
+  }
+
+  const coverImage = normalizeCoverImageUrl(note.coverImage);
+  if (coverImage) {
+    metadata.coverImage = coverImage;
   }
 
   const frontmatter = generateYamlFrontmatter(metadata);

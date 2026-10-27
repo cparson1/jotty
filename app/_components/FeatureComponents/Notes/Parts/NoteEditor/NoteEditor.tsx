@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 import { usePermissions } from "@/app/_providers/PermissionsProvider";
 import { useNotesStore } from "@/app/_utils/notes-store";
 import { useAppMode } from "@/app/_providers/AppModeProvider";
+import { NoteCoverImage } from "@/app/_components/GlobalComponents/Cards/NoteCoverImage";
 
 export interface NoteEditorProps {
   note: Note;
@@ -56,6 +57,12 @@ export const NoteEditor = ({
 
       <div className="flex flex-1 w-full relative min-h-0">
         <div className="flex-1 overflow-y-auto jotty-scrollable-content min-h-0">
+          {note.coverImage && !note.encrypted && (
+            <NoteCoverImage
+              src={note.coverImage}
+              className="jotty-note-cover w-full max-h-64 object-cover bg-muted"
+            />
+          )}
           <NoteEditorContent
             isEditing={viewModel.isEditing}
             noteContent={note.content}

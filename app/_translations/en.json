@@ -406,6 +406,8 @@
     "noteNotFound": "Note not found",
     "unarchiveNote": "Unarchive Note",
     "enterNoteName": "Enter note name...",
+    "coverImageUrl": "Cover image URL",
+    "coverImagePlaceholder": "https://example.com/recipe-photo.jpg",
     "updateNote": "Update Note",
     "printSaveAsPdf": "Print / Save as PDF",
     "tableOfContents": "Table of Contents",

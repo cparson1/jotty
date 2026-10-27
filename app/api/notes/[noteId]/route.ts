@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ noteI
     return withApiAuth(request, async (user) => {
         try {
             const body = await request.json();
-            const { title, content, category } = body;
+            const { title, content, category, coverImage } = body;
 
             const { getUserNotes } = await import("@/app/_server/actions/note");
             const notes = await getUserNotes({ username: user.username });
@@ -67,6 +67,9 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ noteI
             formData.append("category", category ?? note.category ?? "Uncategorized");
             formData.append("originalCategory", note.category || "Uncategorized");
             formData.append("user", user.username);
+            if (coverImage !== undefined) {
+                formData.append("coverImage", coverImage ?? "");
+            }
 
             const result = await updateNote(formData);
             if (result.error) {
@@ -78,6 +81,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ noteI
                 title: result.data?.title,
                 category: result.data?.category || "Uncategorized",
                 content: result.data?.content,
+                coverImage: result.data?.coverImage,
                 createdAt: result.data?.createdAt,
                 updatedAt: result.data?.updatedAt,
                 owner: result.data?.owner,

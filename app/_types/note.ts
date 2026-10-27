@@ -17,6 +17,7 @@ export interface Note {
   encryptedContent?: string;
   encryptionMethod?: EncryptionMethod;
   tags?: string[];
+  coverImage?: string;
 }
 
 export interface NoteEditorViewModel {

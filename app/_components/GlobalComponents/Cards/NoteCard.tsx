@@ -17,6 +17,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { parseNoteContent } from "@/app/_utils/client-parser-utils";
 import { UserAvatar } from "@/app/_components/GlobalComponents/User/UserAvatar";
 import { useTranslations } from "next-intl";
+import { NoteCoverImage } from "./NoteCoverImage";
 
 interface NoteCardProps {
   note: Note;
@@ -68,6 +69,7 @@ export const NoteCard = ({
   const displayTitle = parsedData?.title || note?.title;
   const displayContent = parsedData?.content || note?.content || "";
   const isEncrypted = parsedData?.encrypted ?? note?.encrypted ?? false;
+  const coverImage = parsedData?.coverImage ?? note?.coverImage;
 
   const { previewText, wordCount } = useMemo(() => {
     const content = displayContent;
@@ -121,6 +123,20 @@ export const NoteCard = ({
       className={`jotty-note-card bg-card border border-border rounded-md hover:shadow-md transition-shadow duration-200 hover:border-primary/50 group flex flex-col overflow-hidden h-fit ${isDragging ? "border-primary/30" : ""
         }`}
     >
+      {coverImage && !isEncrypted && (
+        <div
+          className="cursor-pointer"
+          onClick={() => onSelect(note)}
+          onPointerDown={(e) => isDraggable && e.stopPropagation()}
+          onMouseDown={(e) => isDraggable && e.stopPropagation()}
+        >
+          <NoteCoverImage
+            src={coverImage}
+            className="jotty-note-card-cover w-full aspect-[16/9] object-cover bg-muted"
+          />
+        </div>
+      )}
+
       <div className="p-4 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div

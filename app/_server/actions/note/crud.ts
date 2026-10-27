@@ -38,6 +38,7 @@ import { commitNote } from "@/app/_server/actions/history";
 import { noteToMarkdown, convertInternalLinksToNewFormat } from "./parsers";
 import { getNoteById } from "./queries";
 import { broadcast } from "@/app/_server/ws/broadcast";
+import { normalizeCoverImageUrl } from "@/app/_utils/cover-image-utils";
 
 export const createNote = async (formData: FormData) => {
   try {
@@ -47,6 +48,7 @@ export const createNote = async (formData: FormData) => {
       "rawContent",
       "user",
     ]);
+    const coverImageField = formData.get("coverImage");
     const formUser = user ? JSON.parse(user as string) : null;
 
     const sanitizedContent = sanitizeMarkdown(rawContent);
@@ -89,6 +91,10 @@ export const createNote = async (formData: FormData) => {
       tags: extractedTags.length > 0 ? extractedTags : undefined,
       encrypted: encrypted || undefined,
       encryptionMethod,
+      coverImage:
+        typeof coverImageField === "string"
+          ? normalizeCoverImageUrl(coverImageField)
+          : undefined,
     };
 
     await serverWriteFile(filePath, noteToMarkdown(newDoc));
@@ -154,6 +160,7 @@ export const updateNote = async (formData: FormData, autosaveNotes = false) => {
         "user",
         "uuid",
       ]);
+    const coverImageField = formData.get("coverImage");
     const settings = await getSettings();
 
     let currentUser = user;
@@ -216,6 +223,9 @@ export const updateNote = async (formData: FormData, autosaveNotes = false) => {
       encrypted: isEncrypted(convertedContent),
       encryptionMethod,
       tags: sortedTags.length > 0 ? sortedTags : undefined,
+      ...(typeof coverImageField === "string"
+        ? { coverImage: normalizeCoverImageUrl(coverImageField) }
+        : {}),
     };
 
     const ownerDir = NOTES_DIR(note.owner!);

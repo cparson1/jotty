@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         title,
         content = "",
         category = "Uncategorized",
+        coverImage,
       } = body;
 
       if (!title) {
@@ -77,6 +78,9 @@ export async function POST(request: NextRequest) {
       formData.append("rawContent", content);
       formData.append("category", category);
       formData.append("user", JSON.stringify(user));
+      if (typeof coverImage === "string") {
+        formData.append("coverImage", coverImage);
+      }
 
       const result = await createNote(formData);
       if (result.error) {
@@ -88,6 +92,7 @@ export async function POST(request: NextRequest) {
         title: result.data?.title,
         category: result.data?.category || "Uncategorized",
         content: result.data?.content || content,
+        coverImage: result.data?.coverImage,
         createdAt: result.data?.createdAt,
         updatedAt: result.data?.updatedAt,
         owner: result.data?.owner,

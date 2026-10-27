@@ -20,6 +20,7 @@ import {
 } from "@/app/_utils/grep-utils";
 import type { FileStatsEntry } from "@/app/_server/actions/file";
 import { parseMarkdownNote } from "./parsers";
+import { normalizeCoverImageUrl } from "@/app/_utils/cover-image-utils";
 import { Note } from "@/app/_types";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -46,7 +47,7 @@ export const readNotesRecursively = async (
         ? ""
         : `-not -path "*/${ARCHIVED_DIR_NAME}/*"`;
       const statsCmd = `find "${dir}" -name "*.md" ${excludeStr} -printf "%p|%W@|%T@\\n"`;
-      const metaCmd = `grep -rE "^(title|uuid|tags|encrypted):|^[[:space:]]+- |^---$" "${dir}"`;
+      const metaCmd = `grep -rE "^(title|uuid|tags|encrypted|coverImage):|^[[:space:]]+- |^---$" "${dir}"`;
       const [statsOut, metaOut] = await Promise.all([
         execAsync(statsCmd, { maxBuffer: 10 * 1024 * 1024 }).catch(() => ({
           stdout: "",
@@ -202,6 +203,9 @@ export const readNotesRecursively = async (
           owner,
           isShared: false,
           encrypted: metadata?.encrypted === true,
+          coverImage: normalizeCoverImageUrl(
+            typeof metadata?.coverImage === "string" ? metadata.coverImage : undefined,
+          ),
           tags,
         };
       } else if (excerptLength) {
@@ -224,6 +228,9 @@ export const readNotesRecursively = async (
           owner,
           isShared: false,
           encrypted: metadata?.encrypted === true,
+          coverImage: normalizeCoverImageUrl(
+            typeof metadata?.coverImage === "string" ? metadata.coverImage : undefined,
+          ),
           tags,
         };
       } else {

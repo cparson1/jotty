@@ -12,6 +12,7 @@ import { buildCategoryPath } from "@/app/_utils/global-utils";
 import { useAppMode } from "@/app/_providers/AppModeProvider";
 import { Input } from "@/app/_components/GlobalComponents/FormElements/Input";
 import { useTranslations } from "next-intl";
+import { NoteCoverImage } from "@/app/_components/GlobalComponents/Cards/NoteCoverImage";
 
 interface EditNoteModalProps {
   note: Note;
@@ -36,6 +37,7 @@ export const EditNoteModal = ({
   const [title, setTitle] = useState(initialNote.title);
   const initialCategory = unarchive ? "" : initialNote.category || "";
   const [category, setCategory] = useState(initialCategory);
+  const [coverImage, setCoverImage] = useState(initialNote.coverImage || "");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export const EditNoteModal = ({
 
       setNote(fetchedNote);
       setTitle(fetchedNote.title || initialNote.title || "");
+      setCoverImage(fetchedNote.coverImage || "");
       setIsOwner(user.username === fetchedNote.owner);
     };
     fetchNote();
@@ -90,6 +93,9 @@ export const EditNoteModal = ({
     }
 
     formData.append("originalCategory", note.category || "Uncategorized");
+    if (!unarchive) {
+      formData.append("coverImage", coverImage.trim());
+    }
 
     const result = await updateNote(formData, false);
 
@@ -130,6 +136,27 @@ export const EditNoteModal = ({
             disabled={isLoading}
           />
         </div>
+
+        {!unarchive && (
+          <div>
+            <Input
+              id="noteCoverImage"
+              name="noteCoverImage"
+              label={t("notes.coverImageUrl")}
+              type="url"
+              value={coverImage}
+              onChange={(e) => setCoverImage(e.target.value)}
+              placeholder={t("notes.coverImagePlaceholder")}
+              disabled={isLoading}
+            />
+            {coverImage.trim() && (
+              <NoteCoverImage
+                src={coverImage.trim()}
+                className="mt-3 w-full aspect-[16/9] object-cover rounded-jotty bg-muted"
+              />
+            )}
+          </div>
+        )}
 
         {unarchive && (
           <h3 className="text-lg font-bold text-foreground mb-2">{title}</h3>

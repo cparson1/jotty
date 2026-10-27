@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { parseNoteContent } from "@/app/_utils/client-parser-utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { NoteCoverImage } from "./NoteCoverImage";
 
 interface NoteListItemProps {
   note: Note;
@@ -54,6 +55,7 @@ export const NoteListItem = ({
 
   const displayTitle = parsedData?.title || note?.title;
   const isEncrypted = parsedData?.encrypted ?? note?.encrypted ?? false;
+  const coverImage = parsedData?.coverImage ?? note?.coverImage;
 
   const categoryName = useMemo(() => {
     return note?.category ? note?.category.split("/").pop() : null;
@@ -84,7 +86,11 @@ export const NoteListItem = ({
     >
       <div className="p-3 flex items-center gap-3">
         <div className="flex-shrink-0">
-          <File02Icon className="h-5 w-5 text-primary" />
+          <NoteCoverImage
+            src={coverImage}
+            className="h-12 w-12 rounded-jotty object-cover bg-muted"
+            fallback={<File02Icon className="h-5 w-5 text-primary" />}
+          />
         </div>
 
         <div

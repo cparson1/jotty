@@ -1,3 +1,4 @@
+import { normalizeCoverImageUrl } from "@/app/_utils/cover-image-utils";
 import {
   Checklist,
   Note,
@@ -293,10 +294,12 @@ export const parseNoteContent = (
   encrypted?: boolean;
   encryptionMethod?: "pgp" | "xchacha";
   tags?: string[];
+  coverImage?: string;
 } => {
   const { metadata, contentWithoutMetadata } = extractYamlMetadata(rawContent);
 
   const tags = Array.isArray(metadata.tags) ? metadata.tags : undefined;
+  const coverImage = normalizeCoverImageUrl(metadata.coverImage);
 
   if (metadata.title) {
     return {
@@ -306,6 +309,7 @@ export const parseNoteContent = (
       encrypted: metadata.encrypted || false,
       encryptionMethod: metadata.encryptionMethod,
       tags,
+      coverImage,
     };
   }
 
@@ -318,5 +322,6 @@ export const parseNoteContent = (
     encrypted: metadata.encrypted || false,
     encryptionMethod: metadata.encryptionMethod,
     tags,
+    coverImage,
   };
 };
