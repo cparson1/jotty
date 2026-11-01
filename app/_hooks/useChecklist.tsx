@@ -114,6 +114,17 @@ export const useChecklist = ({
     new Map()
   );
   const isInitialMount = useRef(true);
+  const pendingTogglesRef = useRef<Map<string, boolean>>(new Map());
+  const recentTogglesRef = useRef<
+    Map<string, { completed: boolean; until: number }>
+  >(new Map());
+
+  const updatePendingToggles = (
+    updater: (prev: Map<string, boolean>) => Map<string, boolean>
+  ) => {
+    pendingTogglesRef.current = updater(pendingTogglesRef.current);
+    setPendingToggles(pendingTogglesRef.current);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -131,10 +142,6 @@ export const useChecklist = ({
     }),
     useSensor(KeyboardSensor)
   );
-
-  useEffect(() => {
-    setLocalList(list);
-  }, [list]);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -180,7 +187,11 @@ export const useChecklist = ({
 
     const timer = setTimeout(async () => {
       const togglesToProcess = new Map(pendingToggles);
-      setPendingToggles(new Map());
+      updatePendingToggles(() => new Map());
+
+      togglesToProcess.forEach((completed, itemId) => {
+        recentTogglesRef.current.set(itemId, { completed, until: Infinity });
+      });
 
       const syncPromises = Array.from(togglesToProcess.entries()).map(
         async ([itemId, completed]) => {
@@ -200,9 +211,24 @@ export const useChecklist = ({
             if (!result.success) {
               throw new Error("Server action failed");
             }
+
+            const recent = recentTogglesRef.current.get(itemId);
+            if (recent && recent.completed === completed) {
+              recentTogglesRef.current.set(itemId, {
+                completed,
+                until: Date.now() + 3000,
+              });
+            }
           } catch (error) {
             console.error(`Failed to sync toggle for ${itemId}:`, error);
-            setPendingToggles((prev) => new Map(prev).set(itemId, completed));
+            const recent = recentTogglesRef.current.get(itemId);
+            if (recent && recent.completed === completed) {
+              recentTogglesRef.current.delete(itemId);
+            }
+            updatePendingToggles((prev) => {
+              if (prev.has(itemId)) return prev;
+              return new Map(prev).set(itemId, completed);
+            });
           }
         }
       );
@@ -324,55 +350,86 @@ export const useChecklist = ({
     };
   };
 
+  const applyToggleToItems = (
+    items: any[],
+    itemId: string,
+    updates: any
+  ): any[] => {
+    return items.map((item) => {
+      if (item.id === itemId) {
+        let updatedItem = { ...item, ...updates };
+
+        if (updates.completed && item.children && item.children.length > 0) {
+          updatedItem.children = updateAllChildren(item.children, true);
+        } else if (
+          updates.completed === false &&
+          item.children &&
+          item.children.length > 0
+        ) {
+          updatedItem.children = updateAllChildren(item.children, false);
+        }
+
+        return updatedItem;
+      }
+
+      if (item.children && item.children.length > 0) {
+        const updatedChildren = applyToggleToItems(
+          item.children,
+          itemId,
+          updates
+        );
+        return updateParentBasedOnChildren({
+          ...item,
+          children: updatedChildren,
+        });
+      }
+
+      return item;
+    });
+  };
+
+  // A refresh after a background sync hands back the server's copy of the
+  // list. Toggles that are still waiting to sync, or that synced moments ago,
+  // may not be in that copy yet, so re-apply them or the item would pop back
+  // onto the list and vanish again once its own write lands.
+  useEffect(() => {
+    const overlay = new Map<string, boolean>();
+    const now = Date.now();
+
+    recentTogglesRef.current.forEach((entry, itemId) => {
+      if (entry.until > now) {
+        overlay.set(itemId, entry.completed);
+      } else {
+        recentTogglesRef.current.delete(itemId);
+      }
+    });
+    pendingTogglesRef.current.forEach((completed, itemId) => {
+      overlay.set(itemId, completed);
+    });
+
+    // Only touch entries the incoming list doesn't already reflect. The parent
+    // echoes our own localList back as `list`, so when nothing needs changing
+    // we must hand the same object back or the two would keep re-rendering
+    // each other.
+    let items = list.items;
+    let changed = false;
+    overlay.forEach((completed, itemId) => {
+      const existing = findItemById(items, itemId);
+      if (existing && !!existing.completed !== completed) {
+        items = applyToggleToItems(items, itemId, { completed });
+        changed = true;
+      }
+    });
+
+    setLocalList(changed ? { ...list, items } : list);
+  }, [list]);
+
   const handleToggleItem = async (itemId: string, completed: boolean) => {
     const now = new Date().toISOString();
     const toggledItem = findItemById(localList.items, itemId);
 
     setLocalList((currentList) => {
-      const findAndUpdateItem = (
-        items: any[],
-        itemId: string,
-        updates: any
-      ): any[] => {
-        return items.map((item) => {
-          if (item.id === itemId) {
-            let updatedItem = { ...item, ...updates };
-
-            if (
-              updates.completed &&
-              item.children &&
-              item.children.length > 0
-            ) {
-              updatedItem.children = updateAllChildren(item.children, true);
-            } else if (
-              updates.completed === false &&
-              item.children &&
-              item.children.length > 0
-            ) {
-              updatedItem.children = updateAllChildren(item.children, false);
-            }
-
-            return updatedItem;
-          }
-
-          if (item.children && item.children.length > 0) {
-            const updatedChildren = findAndUpdateItem(
-              item.children,
-              itemId,
-              updates
-            );
-            const updatedItem = updateParentBasedOnChildren({
-              ...item,
-              children: updatedChildren,
-            });
-            return updatedItem;
-          }
-
-          return item;
-        });
-      };
-
-      const updatedItems = findAndUpdateItem(currentList.items, itemId, {
+      const updatedItems = applyToggleToItems(currentList.items, itemId, {
         completed,
         ...(currentUser && {
           lastModifiedBy: currentUser.username,
@@ -387,7 +444,7 @@ export const useChecklist = ({
       };
     });
 
-    setPendingToggles((prev) => new Map(prev).set(itemId, completed));
+    updatePendingToggles((prev) => new Map(prev).set(itemId, completed));
 
     if (toggledItem) {
       showToast({
